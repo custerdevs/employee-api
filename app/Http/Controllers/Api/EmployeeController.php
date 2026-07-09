@@ -3,70 +3,56 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
-use Illuminate\Http\Request;
+use App\Http\Requests\StoreEmployeeRequest;
+use App\Http\Requests\UpdateEmployeeRequest;
 use App\Models\Employee;
+use App\Services\EmployeeService;
+use App\Traits\ApiResponse;
 
 class EmployeeController extends Controller
 {
-    /**
-     * Display a listing of the resource.
-     */
+    use ApiResponse;
+
+    protected EmployeeService $employeeService;
+
+    public function __construct(EmployeeService $employeeService)
+    {
+        $this->employeeService = $employeeService;
+    }
+
     public function index()
     {
-        // return all record from database
-        // SQL: SELECT * FROM employees;
-        return Employee::all();
+        $employees = $this->employeeService->getAll();
+
+        return $this->success($employees, 'Employees retrieved successfully.');
     }
 
-    /**
-     * Store a newly created resource in storage.
-     */
-    public function store(Request $request)
+    public function store(StoreEmployeeRequest $request)
     {
-        $employee = Employee::create([
-            'first_name' => $request->first_name,
-            'last_name'  => $request->last_name,
-            'email'      => $request->email,
-            'position'   => $request->position,
-            'salary'     => $request->salary,
-        ]);
+        $employee = $this->employeeService->create($request->validated());
 
-        return response()->json($employee, 201);
+        return $this->success($employee, 'Employee created successfully.', 201);
     }
 
-    /**
-     * Display the specified resource.
-     */
     public function show(Employee $employee)
     {
-        return response()->json($employee);
+        return $this->success($employee, 'Employee retrieved successfully.');
     }
 
-    /**
-     * Update the specified resource in storage.
-     */
-    public function update(Request $request, Employee $employee)
+    public function update(UpdateEmployeeRequest $request, Employee $employee)
     {
-        $employee->update([
-            'first_name' => $request->first_name,
-            'last_name'  => $request->last_name,
-            'email'      => $request->email,
-            'position'   => $request->position,
-            'salary'     => $request->salary,
-        ]);
+        $employee = $this->employeeService->update(
+            $employee,
+            $request->validated()
+        );
 
-        return response()->json($employee);
+        return $this->success($employee, 'Employee updated successfully.');
     }
 
-    /**
-     * Remove the specified resource from storage.
-     */
     public function destroy(Employee $employee)
     {
-        $employee->delete();
+        $this->employeeService->delete($employee);
 
-        return response()->json([
-            "message" => "Employee deleted successfully."
-        ]);
+        return $this->success(null, 'Employee deleted successfully.');
     }
 }
